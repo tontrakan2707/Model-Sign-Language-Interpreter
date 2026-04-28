@@ -1,0 +1,26 @@
+# Dataset & Data files
+/videos/
+*.json
+*.csv
+*.txt
+!wlasl_class_list.txt
+!missing.txt
+
+# Model Files (สำคัญมาก)
+*.keras
+*.h5
+*.tflite
+*.pkl
+
+# ไฟล์และโฟลเดอร์ที่ต้องข้าม (ห้ามมีช่องว่างนำหน้า)
+venv/
+.venv/
+/data/
+__pycache__/
+*.keras
+*.h5
+*.dll
+
+# Kaggle API
+.kaggle/
+kaggle.json

@@ -1,0 +1,16 @@
+
+data/
+
+models/saved_models/**/*.keras
+models/saved_models/**/*.npy
+
+# 3. Virtual Environment & Python Caches
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# 4. OS Files
+.DS_Store
+Thumbs.db
