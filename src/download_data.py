@@ -3,9 +3,9 @@ import subprocess
 
 def download_dataset():
     # ตั้งค่า Environment Variable ผ่านโค้ด Python
-    os.environ['KAGGLE_API_TOKEN'] = "-- ใส่ API Token ของคุณที่ได้จาก Kaggle --" # WLASL (World Level American Sign Language) Video Dataset ที่เราจะใช้เป็นฐานข้อมูลในการเทรนโมเดลของเรา https://www.kaggle.com/datasets/risangbaskoro/wlasl-processed
+    os.environ['KAGGLE_API_TOKEN'] = "-- ใส่ API Token ของคุณที่ได้จาก Kaggle --"
     
-    dataset_id = "risangbaskoro/wlasl-processed"
+    dataset_id = "risangbaskoro/wlasl-processed" #git remote add origin WLASL (World Level American Sign Language) Video Dataset ที่เราจะใช้เป็นฐานข้อมูลในการเทรนโมเดลของเรา https://www.kaggle.com/datasets/risangbaskoro/wlasl-processed
     target_dir = "data"
 
     if not os.path.exists(target_dir):

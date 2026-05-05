@@ -6,8 +6,8 @@ def send_line_notification(message):
     ฟังก์ชันสำหรับส่งแจ้งเตือนเข้า LINE ผ่าน Messaging API
     """
     # ⚠️ ใส่ค่าของคุณที่ได้จาก LINE Developers Console ลงไป
-    CHANNEL_ACCESS_TOKEN = '-- ใส่ Channel Access Token ของคุณที่ได้จาก LINE Developers Console --'
-    USER_ID = '-- ใส่ User ID ของคุณที่ต้องการส่งข้อความไปหา --'
+    CHANNEL_ACCESS_TOKEN = 'ukv6aFA4BMvSLBiapQqOg87nFVlFNIWfU51wXhcFXGBYW5RX6mnZxz9omf85sWeOLiK3kqnbJbNG8wv7OP6TivkG7Z92GmrPAn8EOqtavjySp24RMGoSY48lDq5aaP298JeHgFrPdJFnRDCleYQ2egdB04t89/1O/w1cDnyilFU='
+    USER_ID = 'Uff3badc146018557cf25e1718e734a33'
     
     url = 'https://api.line.me/v2/bot/message/push'
     headers = {

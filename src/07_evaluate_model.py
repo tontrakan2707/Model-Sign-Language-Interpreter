@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd  # 🌟 นำเข้า pandas เพื่อจัดการไฟล์ CSV
 from sklearn.metrics import confusion_matrix, classification_report
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -18,12 +19,17 @@ def calculate_angle(a, b, c):
     return angle
 
 def add_angles_to_sequence(sequence_data):
-    # เช็คก่อนว่าข้อมูลมี 378 ฟีเจอร์ใช่ไหม ถ้าเป็น 392 อยู่แล้วให้ข้ามไปเลย
+    # เช็คก่อนว่าข้อมูลมี 392 ฟีเจอร์ใช่ไหม ถ้าใช่ให้ข้ามไปเลย
     if sequence_data.shape[-1] == 392:
         return sequence_data
         
     new_sequence = []
     for frame_data in sequence_data:
+        
+        # 🌟 HACK: ถ้าข้อมูลเป็น V9 (258 ช่อง) ให้เติม 0 ไป 120 ตัว (แทนปากที่หายไป)
+        if len(frame_data) == 258:
+            frame_data = np.concatenate([frame_data, np.zeros(120)])
+            
         pose = frame_data[:132].reshape(33, 4)[:, :3]
         lh = frame_data[132:195].reshape(21, 3)
         rh = frame_data[195:258].reshape(21, 3)
@@ -58,13 +64,11 @@ MODEL_DIR = "../models/saved_models/v5_expert_tuning"
 MODEL_PATH = os.path.join(MODEL_DIR, "bilstm_model_v5.keras")
 ACTIONS_PATH = os.path.join(MODEL_DIR, "actions.npy")
 
-# ⚠️ สำคัญมาก: โหลดรายชื่อคำศัพท์จาก actions.npy เพื่อให้ลำดับตรงกับสมองกลเป๊ะๆ 100%
 actions = np.load(ACTIONS_PATH)
 model = load_model(MODEL_PATH)
 
 def evaluate():
     sequences, labels = [], []
-    # สร้าง Dictionary แมปคำศัพท์กับตัวเลข (เช่น book: 0, computer: 1)
     label_map = {label:num for num, label in enumerate(actions)}
     
     print(f"📂 กำลังโหลดและแปลงข้อมูลทดสอบสำหรับ {len(actions)} คำศัพท์...")
@@ -77,47 +81,63 @@ def evaluate():
         for seq_file in os.listdir(action_path):
             if seq_file.endswith(".npy"):
                 res = np.load(os.path.join(action_path, seq_file))
-                
-                # 🌟 สกัดฟีเจอร์ใหม่: แปลงข้อมูล 378 ช่อง เป็น 392 ช่องให้เข้ากับ V5
                 res_upgraded = add_angles_to_sequence(res)
-                
                 sequences.append(res_upgraded)
                 labels.append(label_map[action])
 
-    # 2. เตรียมข้อมูล (Padding) เติม 0 ให้ครบ 60 เฟรม
     X_test = pad_sequences(sequences, maxlen=60, padding='post', dtype='float32')
     y_true = np.array(labels)
 
-    # 3. ให้โมเดลทำนายผล
     print(f"🧠 โมเดลกำลังวิเคราะห์ข้อมูลทั้งหมด {X_test.shape[0]} คลิป...")
     y_pred_prob = model.predict(X_test)
     y_pred = np.argmax(y_pred_prob, axis=1)
 
-    # 4. สร้าง Confusion Matrix
     cm = confusion_matrix(y_true, y_pred)
     
-    # 5. วาดกราฟด้วย Seaborn (ปรับแต่งสำหรับสเกลใหญ่ 50 คำ)
-    plt.figure(figsize=(24, 20)) # 🌟 ขยายพื้นที่ผืนผ้าใบให้ใหญ่สะใจ
+    plt.figure(figsize=(24, 20))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                 xticklabels=actions, yticklabels=actions,
-                annot_kws={"size": 8}) # 🌟 ลดขนาดตัวเลขในกล่องลงจะได้ไม่ล้น
+                annot_kws={"size": 8})
                 
     plt.title('Confusion Matrix - Sign Language Interpreter (V5)', fontsize=22, pad=20)
     plt.ylabel('Actual Label (ความจริง)', fontsize=16)
     plt.xlabel('Predicted Label (โมเดลทายว่า)', fontsize=16)
     
-    # 🌟 หมุนข้อความแกน X 90 องศา จะได้ไม่ขี่กัน
     plt.xticks(rotation=90, fontsize=10) 
     plt.yticks(rotation=0, fontsize=10)
     plt.tight_layout()
     
-    # บันทึกรูปแบบความละเอียดสูง (300 DPI) เหมาะสำหรับแปะลงเล่มปริญญานิพนธ์
     save_path = os.path.join(MODEL_DIR, "confusion_matrix_v5.png")
     plt.savefig(save_path, dpi=300) 
     print(f"\n✅ วาดกราฟสำเร็จ! บันทึก Confusion Matrix ไว้ที่: {save_path}")
     
-    # 6. แสดงรายงานสรุป (Precision, Recall, F1-score)
-    print("\n📋 Classification Report:")
+    # ==========================================
+    # 🌟 ส่วนที่เพิ่มเข้ามาใหม่สำหรับการ Export CSV 
+    # ==========================================
+    print("\n📋 กำลังแปลงข้อมูลสำหรับ Power BI...")
+    
+    # 6.1 ส่งออกรายงาน Classification Report (สรุปผลรายคำ)
+    report_dict = classification_report(y_true, y_pred, target_names=actions, output_dict=True)
+    report_df = pd.DataFrame(report_dict).transpose()
+    report_csv_path = os.path.join(MODEL_DIR, "powerbi_classification_report_v5.csv")
+    
+    # ตั้งชื่อคอลัมน์ Index ให้ชัดเจนเวลาเข้า Power BI
+    report_df.index.name = 'class_name' 
+    report_df.to_csv(report_csv_path, index=True)
+    print(f"📊 บันทึก Report CSV ไว้ที่: {report_csv_path}")
+    
+    # 6.2 ส่งออกข้อมูลทายผลดิบ (Actual vs Predicted) สำหรับทำ Dashboard เชิงลึก
+    raw_results_df = pd.DataFrame({
+        'Actual_Label': [actions[i] for i in y_true],
+        'Predicted_Label': [actions[i] for i in y_pred],
+        'Is_Correct': y_true == y_pred
+    })
+    raw_csv_path = os.path.join(MODEL_DIR, "powerbi_raw_predictions_v5.csv")
+    raw_results_df.to_csv(raw_csv_path, index=False)
+    print(f"📊 บันทึก Raw Predictions CSV ไว้ที่: {raw_csv_path}")
+
+    # แสดงผลทางหน้าจอให้ด้วย
+    print("\n📋 Classification Report (Console):")
     print(classification_report(y_true, y_pred, target_names=actions))
 
 if __name__ == "__main__":

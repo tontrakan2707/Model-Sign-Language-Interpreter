@@ -138,8 +138,8 @@ session_stats = {}
 current_cam_idx = 0
 max_cameras = 5
 
-print(f"🎥 กำลังเปิดกล้อง (Camera {current_cam_idx})...")
-cap = cv2.VideoCapture(current_cam_idx)
+print(f"🎥 กำลังเปิดกล้อง (Camera {5})...")
+cap = cv2.VideoCapture(5)
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
